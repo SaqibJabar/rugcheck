@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rugcheck - Don't Get Rugged</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ff1b6d 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+        }
+
+        .tagline {
+            font-size: 18px;
+            color: #a0a0b0;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .form-container {
+            background: rgba(30, 30, 45, 0.95);
+            border: 1px solid rgba(255, 107, 157, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #b0b0c0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"],
+        select {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 107, 157, 0.3);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: #666;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #ff1b6d;
+            background: rgba(255, 107, 157, 0.1);
+            box-shadow: 0 0 20px rgba(255, 27, 109, 0.2);
+        }
+
+        select {
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        .analyze-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #ff1b6d 0%, #ff6b9d 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(255, 27, 109, 0.3);
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(255, 27, 109, 0.5);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 107, 157, 0.2);
+            border-top: 4px solid #ff1b6d;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .result-card {
+            background: rgba(30, 30, 45, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 107, 157, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .risk-scam {
+            background: linear-gradient(135deg, #ff1b6d 0%, #ff0000 100%);
+            color: white;
+        }
+
+        .risk-risky {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+        }
+
+        .risk-warning {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            color: #000;
+        }
+
+        .risk-safe {
+            background: linear-gradient(135deg, #00d4ff 0%, #00aa00 100%);
+            color: white;
+        }
+
+        .risk-score {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 20px 0;
+            background: linear-gradient(135deg, #ff1b6d 0%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .token-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .token-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .token-info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .token-label {
+            color: #a0a0b0;
+            font-weight: 600;
+        }
+
+        .token-value {
+            color: #fff;
+            word-break: break-all;
+        }
+
+        .explanation {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #d0d0d0;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 4px solid #ff1b6d;
+            border-radius: 8px;
+        }
+
+        .recommendation {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            color: #00d4ff;
+            font-weight: 500;
+        }
+
+        .share-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .error-message {
+            background: rgba(255, 27, 109, 0.1);
+            border-left: 4px solid #ff1b6d;
+            padding: 20px;
+            border-radius: 8px;
+            color: #ff6b9d;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .disclaimer {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .price-tag {
+            background: rgba(255, 107, 157, 0.1);
+            border: 1px solid rgba(255, 107, 157, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            color: #ff6b9d;
+        }
+
+        .free-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #00d4ff 0%, #00aa00 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-container,
+            .result-card {
+                padding: 25px;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+
+            .analyze-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚠️ rugcheck</div>
+            <div class="tagline">AI-Powered Token Safety Scanner</div>
+            <div class="subtitle">Don't Get Rugged. Check First.</div>
+        </div>
+
+        <div class="form-container">
+            <div class="input-group">
+                <label class="input-label">Token Contract Address</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="contractAddress" 
+                        placeholder="Paste contract address (e.g., 0x123...)" 
+                    >
+                    <select id="chainSelect">
+                        <option value="1">Ethereum</option>
+                        <option value="56">BSC</option>
+                        <option value="137">Polygon</option>
+                        <option value="42161">Arbitrum</option>
+                        <option value="8453">Base</option>
+                    </select>
+                    <button class="analyze-btn" id="analyzeBtn">Scan Now</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing token for rug pull risks...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="result-card">
+                <div class="risk-badge" id="riskBadge"></div>
+                <div class="risk-score" id="riskScore"></div>
+                
+                <div class="token-info">
+                    <div class="token-info-row">
+                        <span class="token-label">Token Name</span>
+                        <span class="token-value" id="tokenName"></span>
+                    </div>
+                    <div class="token-info-row">
+                        <span class="token-label">Symbol</span>
+                        <span class="token-value" id="tokenSymbol"></span>
+                    </div>
+                    <div class="token-info-row">
+                        <span class="token-label">Chain</span>
+                        <span class="token-value" id="tokenChain"></span>
+                    </div>
+                    <div class="token-info-row">
+                        <span class="token-label">Contract Address</span>
+                        <span class="token-value" id="tokenAddress"></span>
+                    </div>
+                </div>
+
+                <div class="explanation" id="explanation"></div>
+                <div class="recommendation" id="recommendation"></div>
+
+                <div class="price-tag">
+                    <span class="free-badge">✅ FREE</span>
+                    <strong>First check is completely free. Unlimited scans cost $9</strong>
+                </div>
+
+                <button class="share-btn" id="shareBtn">📤 Share Result</button>
+            </div>
+
+            <div class="disclaimer">
+                ⚠️ Disclaimer: rugcheck detects common on-chain red flags. It cannot guarantee protection against all types of fraud or sophisticated scams. Always do your own research before investing. Past rug pulls do not predict future ones.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let analysisCount = 0;
+
+        // Get stored analysis count from localStorage
+        function getAnalysisCount() {
+            const stored = localStorage.getItem('rugcheck_analyses');
+            return stored ? parseInt(stored) : 0;
+        }
+
+        function setAnalysisCount(count) {
+            localStorage.setItem('rugcheck_analyses', count);
+        }
+
+        analysisCount = getAnalysisCount();
+
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            const address = document.getElementById('contractAddress').value.trim();
+            const chain = document.getElementById('chainSelect').value;
+            const errorEl = document.getElementById('errorMessage');
+
+            errorEl.style.display = 'none';
+
+            if (!address) {
+                errorEl.textContent = '❌ Please paste a contract address';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            if (address.length < 5) {
+                errorEl.textContent = '❌ Invalid contract address format';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contract_address: address,
+                        chain_id: chain,
+                        license_key: localStorage.getItem('rugcheck_license')
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Analysis failed');
+                }
+
+                displayResults(data);
+                analysisCount++;
+                setAnalysisCount(analysisCount);
+
+            } catch (error) {
+                errorEl.textContent = `❌ Error: ${error.message}`;
+                errorEl.style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const raw = data.raw_data;
+            const report = data.ai_report;
+
+            // Risk badge
+            const badgeEl = document.getElementById('riskBadge');
+            badgeEl.textContent = report.risk_level.replace(/_/g, ' ');
+            badgeEl.className = `risk-badge risk-${report.risk_level.toLowerCase()}`;
+
+            // Risk score
+            document.getElementById('riskScore').textContent = `${report.risk_score}/100`;
+
+            // Token info
+            document.getElementById('tokenName').textContent = raw.token_name || 'Unknown';
+            document.getElementById('tokenSymbol').textContent = raw.token_symbol || 'Unknown';
+            document.getElementById('tokenChain').textContent = raw.chain || 'Unknown';
+            document.getElementById('tokenAddress').textContent = raw.contract_address;
+
+            // Explanation
+            document.getElementById('explanation').textContent = report.explanation || 'No explanation available';
+
+            // Recommendation
+            document.getElementById('recommendation').textContent = `💡 ${report.recommendation || 'Do your own research before investing'}`;
+
+            // Share button
+            document.getElementById('shareBtn').onclick = () => {
+                const text = `I just checked this token with rugcheck:\n\n🎯 ${raw.token_symbol} - Risk Score: ${report.risk_score}/100\n\n⚠️ Status: ${report.risk_level}\n\n🔗 https://rugcheck.tools\n\nDon't get rugged. Check first.`;
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ Result copied! Share it with your friends.');
+                });
+            };
+
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Allow Enter key to analyze
+        document.getElementById('contractAddress').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('analyzeBtn').click();
+            }
+        });
+
+        // Auto-select all text when input is focused
+        document.getElementById('contractAddress').addEventListener('focus', function() {
+            this.select();
+        });
+    </script>
+</body>
+</html>
