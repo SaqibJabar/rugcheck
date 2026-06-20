@@ -7,7 +7,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from groq import Groq
 
 
@@ -17,6 +17,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 GUMROAD_API_TOKEN = "r0Zp2trgcwjNcXhdzEUv9mByFDBFZYzHivl-uN1NDV0"
 GUMROAD_PRODUCT_ID = "mbdpon"
+GUMROAD_PRODUCT_URL = "https://saqibshams.gumroad.com/l/mbdpon"
 
 if not GROQ_API_KEY or not ETHERSCAN_API_KEY:
     raise RuntimeError("Missing required API keys: GROQ_API_KEY and ETHERSCAN_API_KEY must be set")
@@ -255,6 +256,11 @@ async def serve_frontend():
     """Serve index.html"""
     file_path = os.path.join(os.path.dirname(__file__), "index.html")
     return FileResponse(file_path, media_type="text/html")
+
+
+@app.get("/[GUMROAD_URL]")
+async def redirect_gumroad_placeholder():
+    return RedirectResponse(GUMROAD_PRODUCT_URL, status_code=307)
 
 
 if __name__ == "__main__":
