@@ -1065,7 +1065,10 @@
                 setAnalysisCount(analysisCount);
 
             } catch (error) {
-                errorEl.textContent = `❌ Error: ${error.message}`;
+                const message = error.message === 'free_limit_reached'
+                    ? `❌ Free scan limit reached. <a href="${GUMROAD_URL}" target="_blank" rel="noopener noreferrer">Get Unlimited Access</a>`
+                    : `❌ Error: ${error.message}`;
+                errorEl.innerHTML = message;
                 errorEl.style.display = 'block';
                 document.getElementById('loading').style.display = 'none';
             }

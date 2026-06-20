@@ -197,7 +197,14 @@ async def analyze(request: Request):
 
     contract_address = str(body.get("contract_address", "")).strip()
     chain_id = str(body.get("chain_id", "1")).strip() or "1"
-    license_key = str(body.get("license_key", "")).strip()
+
+    raw_license_key = body.get("license_key")
+    if raw_license_key is None:
+        license_key = ""
+    elif isinstance(raw_license_key, str):
+        license_key = raw_license_key.strip()
+    else:
+        license_key = str(raw_license_key).strip()
 
     if not contract_address:
         raise HTTPException(status_code=400, detail="Contract address required")
