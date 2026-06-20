@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,7 +6,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from analyzer import full_analysis
 import os
-from typing import Optional
+from typing import Optional, Any, Dict
+
 # Load environment variables
 load_dotenv()
 
@@ -27,8 +29,9 @@ class AnalysisRequest(BaseModel):
     license_key: Optional[str] = None
 
 class AnalysisResponse(BaseModel):
-    raw_data: dict
-    ai_report: dict
+    raw_data: Dict[str, Any]
+    ai_report: Dict[str, Any]
+    analysis_time_seconds: float
     is_licensed: bool
 
 # Valid license keys for paid version
@@ -57,21 +60,24 @@ async def analyze(request: AnalysisRequest):
         raise HTTPException(status_code=400, detail="Invalid contract address")
     
     # Validate chain ID
-    valid_chains = ["1", "56", "137", "42161", "8453"]
+    valid_chains = ["1", "56", "sol", "137", "42161", "8453"]
     if request.chain_id not in valid_chains:
-        raise HTTPException(status_code=400, detail="Invalid chain ID")
+        raise HTTPException(status_code=400, detail="Invalid chain ID. Supported: Ethereum (1), BSC (56), Solana (sol), Polygon (137), Arbitrum (42161), Base (8453)")
     
     # Run analysis
+    start_time = time.monotonic()
     try:
         result = full_analysis(request.contract_address, request.chain_id)
-        
-        # Check if result has error
-        if "error" in result["raw_data"]:
-            raise HTTPException(status_code=400, detail=result["raw_data"]["error"])
-        
+        analysis_time_seconds = round(time.monotonic() - start_time, 2)
+
+        raw_data = result.get("raw_data", {})
+        if raw_data.get("error"):
+            raise HTTPException(status_code=502, detail=raw_data["error"])
+
         return {
-            "raw_data": result["raw_data"],
-            "ai_report": result["ai_report"],
+            "raw_data": raw_data,
+            "ai_report": result.get("ai_report", {}),
+            "analysis_time_seconds": analysis_time_seconds,
             "is_licensed": False
         }
     

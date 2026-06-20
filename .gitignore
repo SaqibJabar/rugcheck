@@ -10,6 +10,8 @@ build/
 .vscode/
 .idea/
 *.log
+.cache.json
+.history.json
 venv/
 .venv/
 analyzer_groq_error.py
