@@ -252,7 +252,9 @@ async def analyze(request: Request):
 
 @app.get("/")
 async def serve_frontend():
-    return FileResponse("index.html", media_type="text/html")
+    """Serve index.html"""
+    file_path = os.path.join(os.path.dirname(__file__), "index.html")
+    return FileResponse(file_path, media_type="text/html")
 
 
 if __name__ == "__main__":
